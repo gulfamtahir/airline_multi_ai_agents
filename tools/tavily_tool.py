@@ -1,6 +1,7 @@
 from tavily import TavilyClient
 import os
 from dotenv import load_dotenv
+from langchain_core.tools import tool
 
 load_dotenv()
 
@@ -10,8 +11,10 @@ client = TavilyClient(
 )
 
 
-
-def tavily_search(query):
+@tool
+def tavily_search(query: str) -> str:
+    """Search the web for hotel recommendations, prices, and reviews. Use this
+    whenever the user's request involves hotels or accommodation."""
     response = client.search(
         query=query,
         max_results=5
@@ -30,6 +33,3 @@ def tavily_search(query):
         results.append(f"{i}. **{title}**\n   {url}\n   {snippet}")
 
     return "\n\n".join(results)
-    
-    
-    

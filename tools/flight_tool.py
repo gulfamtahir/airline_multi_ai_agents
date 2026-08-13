@@ -2,13 +2,17 @@
 import os
 import requests
 from dotenv import load_dotenv
+from langchain_core.tools import tool
 
 load_dotenv()
 
 API_KEY = os.getenv("AVIATIONSTACK_API_KEY")
 
 
-def search_flights(query):
+@tool
+def search_flights(query: str) -> str:
+    """Search for available flights. Use this whenever the user's request involves
+    airline travel, flights, or airfare. Pass the traveler's flight request as the query."""
 
     url = "http://api.aviationstack.com/v1/flights"
 
