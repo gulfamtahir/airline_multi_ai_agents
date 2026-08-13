@@ -6,8 +6,6 @@ from langchain_core.tools import tool
 
 load_dotenv()
 
-API_KEY = os.getenv("AVIATIONSTACK_API_KEY")
-
 
 @tool
 def search_flights(query: str) -> str:
@@ -17,7 +15,7 @@ def search_flights(query: str) -> str:
     url = "http://api.aviationstack.com/v1/flights"
 
     params = {
-        "access_key": API_KEY,
+        "access_key": os.getenv("AVIATIONSTACK_API_KEY"),
         "limit": 5
     }
 

@@ -6,15 +6,11 @@ from langchain_core.tools import tool
 load_dotenv()
 
 
-client = TavilyClient(
-    api_key=os.getenv("TAVILY_API_KEY")
-)
-
-
 @tool
 def tavily_search(query: str) -> str:
     """Search the web for hotel recommendations, prices, and reviews. Use this
     whenever the user's request involves hotels or accommodation."""
+    client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
     response = client.search(
         query=query,
         max_results=5

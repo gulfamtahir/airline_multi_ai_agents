@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from datetime import datetime
 from langchain_core.messages import HumanMessage
-from main import app, merge_usage
+from main import build_app, merge_usage, check_postgres_connection
 
 st.set_page_config(
     page_title="AI Travel Booking System",
@@ -308,6 +308,51 @@ with st.sidebar:
     thread_id = st.text_input("👤 User ID", value="gull_user",
                               help="Your session ID — keeps travel history across queries")
 
+    st.markdown("<div class='sidebar-title'>🔑 API Configuration</div>", unsafe_allow_html=True)
+
+    tavily_key = st.text_input("Tavily API Key", value="",
+                                type="password", key="tavily_key_input")
+    groq_key = st.text_input("Groq API Key", value="",
+                              type="password", key="groq_key_input")
+    aviation_key = st.text_input("AviationStack API Key", value="",
+                                  type="password", key="aviation_key_input")
+    database_url = st.text_input("Database URL", value="",
+                                  type="password", key="database_url_input")
+
+    if st.button("🔌 Connect", use_container_width=True):
+        missing = [name for name, val in [
+            ("Tavily API Key", tavily_key),
+            ("Groq API Key", groq_key),
+            ("AviationStack API Key", aviation_key),
+            ("Database URL", database_url),
+        ] if not val.strip()]
+
+        if missing:
+            st.error(f"Missing: {', '.join(missing)}")
+        else:
+            os.environ["TAVILY_API_KEY"] = tavily_key
+            os.environ["GROQ_API_KEY"] = groq_key
+            os.environ["AVIATIONSTACK_API_KEY"] = aviation_key
+            os.environ["DATABASE_URL"] = database_url
+
+            with st.spinner("Connecting..."):
+                if not check_postgres_connection(dsn=database_url):
+                    st.error("Could not connect to the database with that URL.")
+                    st.session_state["configured"] = False
+                else:
+                    try:
+                        st.session_state["app"] = build_app()
+                        st.session_state["configured"] = True
+                        st.success("Connected! You can now plan a trip.")
+                    except Exception as e:
+                        st.session_state["configured"] = False
+                        st.error(f"Failed to initialize: {e}")
+
+    if st.session_state.get("configured"):
+        st.markdown("<div class='sidebar-chip'>✅ Configured</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<div class='sidebar-chip'>⚠️ Not connected yet</div>", unsafe_allow_html=True)
+
     st.markdown("<div class='sidebar-title'>Powered by</div>", unsafe_allow_html=True)
     for tech in ["🔗 LangGraph", "🧠 Groq · LLaMA 3.3 70B", "🐘 PostgreSQL", "🔍 Tavily Search", "✈️ AviationStack"]:
         st.markdown(f"<div class='sidebar-chip'>{tech}</div>", unsafe_allow_html=True)
@@ -351,6 +396,13 @@ for col, (name, img_url) in zip(cols, DESTINATIONS):
         """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+if not st.session_state.get("configured"):
+    st.info("🔑 Enter your Tavily, Groq, and AviationStack API keys plus your Database URL "
+             "in the sidebar, then click **Connect** to get started.")
+    st.stop()
+
+app = st.session_state["app"]
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 st.markdown("<div class='input-label'>🗺️ Describe your trip</div>", unsafe_allow_html=True)
